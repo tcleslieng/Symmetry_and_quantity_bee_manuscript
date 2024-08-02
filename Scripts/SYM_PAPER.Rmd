@@ -8,7 +8,7 @@ output:
    toc_float: yes
    collapsed: true 
    smooth_scroll: true
-   depth: 2 
+   depth: 3 
    highlight: tango # different theme for the appearance of the code
    theme: flatly
    code_folding: hide
@@ -125,7 +125,7 @@ transtest <-subset(test, TESTCONDITION == "TRANSF") #subset data
 
 # **Logistic regressions**
 
-## *Test data*
+### *Test data*
 The first part of the model name indicates the training condition, and the second part indicates the specific test e.g. symasymlm refers to the model on data for the asymmetrical test involving bees trained with symmetrical stimuli 
 ```{r message=FALSE, error=FALSE}
 symsymlm <- glmer(CHOICE~ 1 + (1|BEEID), family = binomial, data = symsym)
@@ -163,7 +163,7 @@ summary(transfertestcompare)
 
 ```
 
-## *Confidence intervals*
+### *Confidence intervals*
 
 ```{r results='hide', error=FALSE, message=FALSE, warning=FALSE}
 
@@ -207,7 +207,7 @@ asymconfllmconfinthigh<-(exp(0.747081)/(1 + exp(0.747081)))
 
 # **Generate figures**
 
-## *Create dataframe for figures*
+### *Create dataframe for figures*
 
 ```{r message=FALSE, results='hide', error=FALSE}
 symdframe <- data.frame(condition = rep(c("Symmetry","Asymmetry","Transfer","Conflict")), # Create dataframe
@@ -304,7 +304,7 @@ print(asymgraph)
 
 ```
 
-## *Saving combined figure*
+### *Saving combined figure*
 
 ```{r}
 symgraph_final <- symgraph+
@@ -409,7 +409,7 @@ aic_modela2 <- AIC(asymtrlm3)
 print(c(AIC_Model1 = aic_modela1, AIC_Model2 = aic_modela2))
 ```
 
-## *Bootstrapping to check models*
+### *Bootstrapping to check models*
 
 ```{r, eval=FALSE}
 
