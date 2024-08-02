@@ -385,13 +385,6 @@ STRAINING$CNUM2 <- scale(STRAINING$CNUM)
 symtrlm3 <- glmer(CHOICE~ CNUM2 + (1|BEEID), family = binomial, data = STRAINING) 
 summary(symtrlm3)
 
-# Extract AIC
-aic_models1 <- AIC(symtrlm2)
-aic_models2 <- AIC(symtrlm3)
-
-# Compare AIC values
-print(c(AIC_Model1 = aic_models1, AIC_Model2 = aic_models2))
-
 asymtrlm <- glmer(CHOICE~ CNUM + (1|BEEID), family = binomial, data = ATRAINING)
 summary(asymtrlm)
 asymtrlm2 <- glmer(CHOICE~ CNUM + (1|BEEID), family = binomial, data = ATRAINING, nAGQ = 0)
@@ -401,26 +394,27 @@ asymtrlm3 <- glmer(CHOICE~ CNUM2 + (1|BEEID), family = binomial, data = ATRAININ
 summary(asymtrlm3)
 
 
-# Extract AIC
-aic_modela1 <- AIC(asymtrlm2)
-aic_modela2 <- AIC(asymtrlm3)
+# Compare AICc values
 
-# Compare AIC values
-print(c(AIC_Model1 = aic_modela1, AIC_Model2 = aic_modela2))
-```
+models_supp <- list(
+  sym_training_nAGQ = symtrlm2,
+  sym_training_scaled = symtrlm3,
+  asym_training_nAGQ = asymtrlm2,
+  asym_training_scaled = asymtrlm3)
 
-### *Bootstrapping to check models*
+# Compute performance metrics for each model
+performance_results2 <- lapply(models_supp, model_performance)
 
-```{r, eval=FALSE}
-
-# Bootstrap for model1
-bootstrap_model1 <- bootMer(symtrlm2, FUN = fixef, nsim = 1000)
-
-# Bootstrap for model2
-bootstrap_model2 <- bootMer(symtrlm3, FUN = fixef, nsim = 1000)
-
-# Compare bootstrap distributions
-print(c(Median_Coefficient_Model1 = median(bootstrap_model1$t), Median_Coefficient_Model2 = median(bootstrap_model2$t)))
-
-
+# Capture and print markdown output for each model
+for (model_name in names(performance_results2)) {
+  cat(paste0("### Performance Metrics for ", model_name, "\n\n"))
+  
+  # Capture the output in markdown format
+  output <- capture.output(display(performance_results2[[model_name]], format = "markdown", digits = 2, caption = NULL))
+  
+  # Print the captured output to the console
+  cat(paste(output, collapse = "\n"))
+  
+  cat("\n\n")
+}
 ```
