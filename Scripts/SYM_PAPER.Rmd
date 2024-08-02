@@ -259,7 +259,7 @@ asymdframe$condition <- factor(asymdframe$condition, levels = c('Symmetry', 'Asy
 
 symgraph <- ggplot(symdframe, aes(x = condition, y = proportion, fill = condition)) +
   geom_hline(yintercept = 0.5, linetype = "dashed", colour = "grey") +
-  labs(x = "Condition", y = "Mean proportion of correct choices", fill = "Condition") +
+  labs(x = "Condition", y = "Mean proportion of choices", fill = "Condition") +
   geom_bar(stat = "identity", position = "dodge", width = .7) + 
   geom_point(data = symmeanpoints, aes(x = condition, y = prop, colour = BEEID), 
              position = position_jitter(width = 0.15, height = 0.01), size = 2, colour = "#696969") +
@@ -282,7 +282,7 @@ print(symgraph)
 
 asymgraph <- ggplot(asymdframe, aes(x = condition, y = proportion, fill = condition))+
   geom_hline(yintercept = 0.5, linetype = "dashed", colour = "grey") +
-  labs (x= "Condition", y = "Mean proportion of correct choices", fill="Condition") +
+  labs (x= "Condition", y = "Mean proportion of choices", fill="Condition") +
   geom_bar(stat = "identity", position = "dodge", width = .7) + 
   geom_point(data = asymmeanpoints, aes(x = condition, y = prop), position = position_jitter(width=0.15, height=0.01), size =2, colour = "#696969") +
   scale_fill_manual(values = wes_palette("GrandBudapest2", n = 4)) +
@@ -415,4 +415,69 @@ for (model_name in names(performance_results2)) {
   
   cat("\n\n")
 }
+```
+
+# **Supplementary Test data**
+Testing if a conflict test using large numbers (10 vs 10) has an effect on preference
+```{r}
+symconfl_large_lm <- glmer(CHOICE~ 1 + (1|BEEID), family = binomial, data = symconflict2)
+summary(symconfl_large_lm)
+summary(symconflict2)
+
+asymconfl_large_lm <- glmer(CHOICE~ 1 + (1|BEEID), family = binomial, data = asymconflict2) 
+summary(asymconfl_large_lm)
+summary(asymconflict2)
+
+confint(symconfl_large_lm)
+symconfl_large_lmconfintlow <-(exp(-0.6812548)/(1 + exp(-0.6812548)))
+symconfl_large_lmconfinthigh<-(exp(1.239418)/(1 + exp(1.239418)))
+
+confint(asymconfl_large_lm)
+asymconfl_large_lmconfintlow <-(exp(-0.5036269)/(1 + exp(-0.5036269)))
+asymconfl_large_lmconfinthigh<-(exp(0.3303297)/(1 + exp(0.3303297)))
+
+# Create dataframe for supplementary figure comparing performance in EE and SA
+
+dframeconfl2 <- data.frame(TRAININGCONDITION = rep(c("Sym", "Asym")), #create dataframe
+                        prop = c(0.54, 0.48),
+                        confintlow = c(symconfl_large_lmconfintlow, asymconfl_large_lmconfintlow),
+                        confinthigh = c(symconfl_large_lmconfinthigh, asymconfl_large_lmconfinthigh))
+
+symasym_large <-subset(test, TESTCONDITION == "CONFLLARGE")
+
+
+symasym_large$TRAININGCONDITION <- as.character(symasym_large$TRAININGCONDITION)
+
+symasym_large$TRAININGCONDITION <- paste0(
+  toupper(substr(symasym_large$TRAININGCONDITION, 1, 1)),
+  tolower(substr(symasym_large$TRAININGCONDITION, 2, nchar(symasym_large$TRAININGCONDITION)))
+)
+
+largepoints <- symasym_large %>%   # calculate mean of each block for each bee
+  group_by(BEEID, TRAININGCONDITION) %>% 
+  summarize(prop = mean(CHOICE)) %>% 
+  mutate(prop = ifelse(prop == 1, 0.95, prop)) %>%
+  mutate(prop = ifelse(prop == 0, 0.05, prop))
+
+
+conflict2graph <- ggplot()+
+  labs (x= "Training condition", y = "Mean proportion of choices") +
+  geom_bar(data = dframeconfl2, aes(x = TRAININGCONDITION, y = prop, fill = TRAININGCONDITION), stat = "identity", position = "dodge") + 
+   geom_point(data = largepoints, aes(x = TRAININGCONDITION, y = prop), position = position_jitter(width=0.15, height=0.01), size =2, colour="#696969") +
+  geom_errorbar(data= dframeconfl2, aes(x = TRAININGCONDITION, y = prop, ymin = confintlow, ymax = confinthigh), width=.2, position=position_dodge(.9)) +
+  geom_hline(yintercept = 0.5, linetype = "dashed", colour = " black") +
+  scale_fill_manual(values = wes_palette("GrandBudapest2", n = 2)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = NULL), limits = c(0, 1))  +
+  theme(panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        aspect.ratio = 1/1, 
+        axis.title.y = element_text(vjust = 5),
+        axis.title.x = element_text(vjust = -3),
+        plot.margin = margin(0.6,0.6,0.6,0.6, "cm")) + theme(axis.title = element_text(size = 15),
+    axis.text.x = element_text(size = 15),
+    axis.text.y = element_text(size = 15),
+    axis.title.y = element_text(vjust = 5, size = 15)) + theme(legend.position = "none")
+conflict2graph
+ggsave("figSuppx.pdf", device = pdf, height= 5, width=5, dpi = 300, path = "../Output")
+ggsave("figSuppx.png", device = png, height= 5, width=5, dpi = 300, path = "../Output")
 ```
