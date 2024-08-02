@@ -1,0 +1,426 @@
+---
+title: "Working title: Effect of symmetry on quantity discrimination"
+author: "Leslie Ng"
+date: "2024-01-08"
+output:
+  html_document:
+   toc: yes
+   toc_float: yes
+   collapsed: true 
+   smooth_scroll: true
+   depth: 2 
+   highlight: tango # different theme for the appearance of the code
+   theme: flatly
+   code_folding: hide
+self_contained: yes
+mode: selfcontained
+editor_options:
+  chunk_output_type: console
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../Output") })
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# **Introduction**
+
+In this study we tested if training bees using symmetrical/asymmetrical stimuli had an effect on their quantity discrimination. This document provides details on data processing, statistical analysis and figures of the original manuscript submitted for peer review.
+
+The following code is written in the R programming language.
+
+# **Install required packages**
+
+```{r eval=FALSE}
+install.packages("lme4") # linear mixed effect models
+install.packages("ggplot2") # plot graphs
+install.packages("tidyverse") # QOL features
+install.packages("wesanderson") # color palette
+install.packages("dplyr")  # data manipulation
+install.packages("BFpack") # Bayes Factor for logistic regression
+install.packages("ggThemeAssist") # Add-in to customize ggplot2 themes
+install.packages("performance") # For assumption checking
+install.packages("DHARMa") # For assumption checking]
+install.packages("patchwork") # For combining figures together
+```
+
+# **Load packages**
+
+```{r, message=FALSE, warning=FALSE}
+library(lme4) # linear mixed effect models
+library(ggplot2) # plot graphs
+library(tidyverse) # QOL features
+library(wesanderson) # color palette
+library(dplyr)  # data manipulation
+library(BFpack) # Bayes Factor for logistic regression
+library(ggThemeAssist) # you may need to restart you session for this add-in to appear
+library(performance) # For assumption checking
+library(DHARMa) # For assumption checking
+library(patchwork)
+```
+
+# **Data importing**
+
+```{r, message=FALSE, results="hide"}
+
+# Data importing -----------------------------------------------------------------------
+
+test <- read.csv("../Data/sym_test.csv", header=TRUE)
+training <- read.csv("../Data/sym_training.csv", header=TRUE)
+summary(test) #view summary
+summary(training)
+
+
+# Data wrangling ------------------------------------------------------------------------
+
+test$BEEID <- as.factor(test$BEEID) # treat as a categorical factor
+test$TESTCONDITION <- as.factor(test$TESTCONDITION)
+
+training$BEEID <- as.factor(training$BEEID) # treat as a categorical factor
+training$SYM <- as.factor(training$SYM)
+
+symmetry <-subset(test, TRAININGCONDITION == "SYM") #subset data
+asymmetry <-subset(test, TRAININGCONDITION == "ASYM")
+
+symsym <-subset(symmetry, TESTCONDITION == "SYM") #subset data
+mean(symsym$CHOICE)
+
+asymsym <-subset(asymmetry, TESTCONDITION == "SYM")
+mean(asymsym$CHOICE)
+
+symasym <-subset(symmetry, TESTCONDITION == "ASYM") #subset data
+mean(symasym$CHOICE)
+
+asymasym <-subset(asymmetry, TESTCONDITION == "ASYM")
+mean(asymasym$CHOICE)
+
+symtrans <-subset(symmetry, TESTCONDITION == "TRANSF") #subset data
+mean(symtrans$CHOICE)
+
+asymtrans <-subset(asymmetry, TESTCONDITION == "TRANSF")
+mean(asymtrans$CHOICE)
+
+symconflict <-subset(symmetry, TESTCONDITION == "CONFL") #subset data
+mean(symconflict$CHOICE)
+
+asymconflict <-subset(asymmetry, TESTCONDITION == "CONFL")
+mean(asymconflict$CHOICE)
+
+symconflict2 <-subset(symmetry, TESTCONDITION == "CONFLLARGE") #subset data
+mean(symconflict2$CHOICE)
+
+asymconflict2 <-subset(asymmetry, TESTCONDITION == "CONFLLARGE")
+mean(asymconflict2$CHOICE)
+
+
+
+STRAINING <-subset(training, SYM == "S") #subset data
+ATRAINING <-subset(training, SYM == "A")
+symmetrytest <-subset(test, TESTCONDITION == "SYM") #subset data
+asymmetrytest <-subset(test, TESTCONDITION == "ASYM") #subset data
+transtest <-subset(test, TESTCONDITION == "TRANSF") #subset data
+
+```
+
+# **Logistic regressions**
+
+## *Test data*
+The first part of the model name indicates the training condition, and the second part indicates the specific test e.g. symasymlm refers to the model on data for the asymmetrical test involving bees trained with symmetrical stimuli 
+```{r message=FALSE, error=FALSE}
+symsymlm <- glmer(CHOICE~ 1 + (1|BEEID), family = binomial, data = symsym)
+summary(symsymlm)
+
+asymsymlm <- glmer(CHOICE~ 1 + (1|BEEID), family = binomial, data = asymsym) 
+summary(asymsymlm)
+
+symasymlm <- glmer(CHOICE~ 1 + (1|BEEID), family = binomial, data = symasym)
+summary(symasymlm)
+
+asymasymlm <- glmer(CHOICE~ 1 + (1|BEEID), family = binomial, data = asymasym) 
+summary(asymasymlm)
+
+symtranslm <- glmer(CHOICE~ 1 + (1|BEEID), family = binomial, data = symtrans)
+summary(symtranslm)
+
+asymtranslm <- glmer(CHOICE~ 1 + (1|BEEID), family = binomial, data = asymtrans) 
+summary(asymtranslm)
+
+symconfllm <- glmer(CHOICE~ 1 + (1|BEEID), family = binomial, data = symconflict)
+summary(symconfllm)
+
+asymconfllm <- glmer(CHOICE~ 1 + (1|BEEID), family = binomial, data = asymconflict) 
+summary(asymconfllm)
+
+symtestcompare<- glmer(CHOICE~TRAININGCONDITION+(1|BEEID), family = binomial, data = symmetrytest) 
+summary(symtestcompare)
+
+asymtestcompare<- glmer(CHOICE~ TRAININGCONDITION+(1|BEEID), family = binomial, data = asymmetrytest) 
+summary(asymtestcompare)
+
+transfertestcompare<- glmer(CHOICE~ TRAININGCONDITION+(1|BEEID), family = binomial, data = transtest) 
+summary(transfertestcompare)
+
+```
+
+## *Confidence intervals*
+
+```{r results='hide', error=FALSE, message=FALSE, warning=FALSE}
+
+confint(symsymlm) #confidence interval
+symsymlmconfintlow<-(exp(0.1684812)/(1 + exp(0.1684812))) #reverse link function
+symsymlmconfinthigh<-(exp(0.8137388)/(1 + exp(0.8137388)))
+
+confint(asymsymlm)
+asymsymlmconfintlow <-(exp(0.2992044)/(1 + exp(0.2992044)))
+asymsymlmconfinthigh<-(exp(1.166141 )/(1 + exp(1.166141)))
+
+
+confint(symasymlm)
+symasymlmconfintlow <-(exp(0.1243281)/(1 + exp(0.1243281)))
+symasymlmconfinthigh<-(exp(0.9110778 )/(1 + exp(0.9110778)))
+
+
+confint(asymasymlm)
+asymasymlmconfintlow <-(exp(0.536397)/(1 + exp(0.536397)))
+asymasymlmconfinthigh<-(exp(1.456451 )/(1 + exp(1.456451)))
+
+confint(symtranslm)
+symtranslmconfintlow <-(exp(0.3327167)/(1 + exp(0.3327167)))
+symtranslmconfinthigh<-(exp(1.188838 )/(1 + exp(1.188838)))
+
+
+confint(asymtranslm)
+asymtranslmconfintlow <-(exp(0.5579531)/(1 + exp(0.5579531)))
+asymtranslmconfinthigh<-(exp(1.3551496 )/(1 + exp(1.3551496)))
+
+confint(symconfllm)
+symconfllmconfintlow <-(exp(-0.3037767)/(1 + exp(-0.3037767)))
+symconfllmconfinthigh<-(exp(0.3553857)/(1 + exp(0.3553857)))
+
+confint(asymconfllm)
+asymconfllmconfintlow <-(exp(-0.1840665)/(1 + exp(-0.1840665)))
+asymconfllmconfinthigh<-(exp(0.747081)/(1 + exp(0.747081)))
+
+
+```
+
+# **Generate figures**
+
+## *Create dataframe for figures*
+
+```{r message=FALSE, results='hide', error=FALSE}
+symdframe <- data.frame(condition = rep(c("Symmetry","Asymmetry","Transfer","Conflict")), # Create dataframe
+                legend = c("S","A","T","C"), 
+                proportion = c(0.619,0.619,0.669,0.506),
+                confintlow = c(symsymlmconfintlow,symasymlmconfintlow,symtranslmconfintlow,symconfllmconfintlow),
+                confinthigh = c(symsymlmconfinthigh,symasymlmconfinthigh,symtranslmconfinthigh,symconfllmconfinthigh))
+
+
+
+symmeanpoints <- symmetry %>%   # Calculate mean of each block for each bee
+  group_by(BEEID, TESTCONDITION) %>% 
+  summarize(prop = mean(CHOICE)) 
+  colnames(symmeanpoints)[2] ="condition" # rename column to match dframe
+  levels(symmeanpoints$condition) <- tolower(levels(symmeanpoints$condition)) # rename condition names to match 
+  levels(symmeanpoints$condition) <- str_to_title(levels(symmeanpoints$condition)) # recapitalize condition names
+  levels(symmeanpoints$condition) <- c('Asymmetry', 'Conflict', 'Conflict large', 'Symmetry', 'Transfer')
+  symmeanpoints$condition <- factor(symmeanpoints$condition, levels=c('Symmetry', 'Asymmetry', 'Transfer', 'Conflict', 'Conflict large'))
+  levels(symmeanpoints$condition)
+  symmeanpoints <- subset(symmeanpoints, condition == "Symmetry" | condition == "Asymmetry" | condition == "Transfer" | condition == "Conflict")
+symdframe$condition <- factor(symdframe$condition, levels = c('Symmetry', 'Asymmetry', 'Transfer', 'Conflict'))
+
+                           
+  
+  asymdframe <- data.frame(condition = rep(c("Symmetry","Asymmetry","Transfer","Conflict")), # Create dataframe
+                legend = c("S","A","T","C"), 
+                proportion = c(0.663,0.713,0.713,0.563),
+                confintlow = c(asymsymlmconfintlow,asymasymlmconfintlow,asymtranslmconfintlow,asymconfllmconfintlow),
+                confinthigh = c(asymsymlmconfinthigh,asymasymlmconfinthigh,asymtranslmconfinthigh,asymconfllmconfinthigh))
+
+asymmeanpoints <- asymmetry %>%   # Calculate mean of each block for each bee
+  group_by(BEEID, TESTCONDITION) %>% 
+  summarize(prop = mean(CHOICE)) %>%
+  mutate(prop = ifelse(prop == 1, 0.95, prop))
+  colnames(asymmeanpoints)[2] ="condition" # rename column to match dframe
+  levels(asymmeanpoints$condition) <- tolower(levels(asymmeanpoints$condition)) # rename condition names to match 
+  levels(asymmeanpoints$condition) <- str_to_title(levels(asymmeanpoints$condition)) # recapitalize condition names
+  levels(asymmeanpoints$condition) <- c('Asymmetry', 'Conflict', 'Conflict large', 'Symmetry', 'Transfer')
+  asymmeanpoints$condition <- factor(asymmeanpoints$condition, levels=c('Symmetry', 'Asymmetry', 'Transfer', 'Conflict', 'Conflict large'))
+  levels(asymmeanpoints$condition)
+  asymmeanpoints <- subset(asymmeanpoints, condition == "Symmetry" | condition == "Asymmetry" | condition == "Transfer" | condition == "Conflict")
+asymdframe$condition <- factor(asymdframe$condition, levels = c('Symmetry', 'Asymmetry', 'Transfer', 'Conflict'))
+  
+```
+
+# **Generate figure**
+
+```{r}
+
+symgraph <- ggplot(symdframe, aes(x = condition, y = proportion, fill = condition)) +
+  geom_hline(yintercept = 0.5, linetype = "dashed", colour = "grey") +
+  labs(x = "Condition", y = "Mean proportion of correct choices", fill = "Condition") +
+  geom_bar(stat = "identity", position = "dodge", width = .7) + 
+  geom_point(data = symmeanpoints, aes(x = condition, y = prop, colour = BEEID), 
+             position = position_jitter(width = 0.15, height = 0.01), size = 2, colour = "#696969") +
+  scale_fill_manual(values = wes_palette("GrandBudapest2", n = 4)) +
+  geom_errorbar(aes(ymin = confintlow, ymax = confinthigh), width = .2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = NULL), limits = c(0, 1)) +
+    scale_x_discrete(labels = c("Sym", "Asym", "Transf", "Confl")) +  # Change x-axis labels +
+  theme(panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        aspect.ratio = 1 / 1,
+        legend.position = "none",
+        axis.title = element_text(size = 15),
+        axis.text = element_text(size = 15),
+        plot.margin = margin(0.3,0.3,0.3,0.3, "cm"),
+        axis.title.y = element_text(vjust = 3),
+        axis.title.x = element_text(margin = margin(t = 10)))
+print(symgraph)
+
+
+
+asymgraph <- ggplot(asymdframe, aes(x = condition, y = proportion, fill = condition))+
+  geom_hline(yintercept = 0.5, linetype = "dashed", colour = "grey") +
+  labs (x= "Condition", y = "Mean proportion of correct choices", fill="Condition") +
+  geom_bar(stat = "identity", position = "dodge", width = .7) + 
+  geom_point(data = asymmeanpoints, aes(x = condition, y = prop), position = position_jitter(width=0.15, height=0.01), size =2, colour = "#696969") +
+  scale_fill_manual(values = wes_palette("GrandBudapest2", n = 4)) +
+  geom_errorbar(aes(ymin = confintlow, ymax = confinthigh), width=.2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1, suffix = NULL), limits = c(0,1)) +
+  scale_x_discrete(labels = c("Sym", "Asym", "Transf", "Confl")) +  # Change x-axis labels +
+  theme(panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        aspect.ratio = 1/1,
+        legend.position = "none",
+                axis.title = element_text(size = 15),
+        axis.text = element_text(size = 15),
+        axis.title.y = element_blank(),
+        plot.margin = margin(0.3,0.3,0.3,0.3, "cm"),
+        axis.title.x = element_text(margin = margin(t = 10)))
+
+print(asymgraph)
+
+
+```
+
+## *Saving combined figure*
+
+```{r}
+symgraph_final <- symgraph+
+    annotate("text", x = 0.7, y = 0.95, label = "A", size = 5, fontface = "bold")
+asymgraph_final <- asymgraph+
+    annotate("text", x = 0.7, y = 0.95, label = "B", size = 5, fontface = "bold")
+figx <- symgraph_final + asymgraph_final
+figx
+ggsave("figx.pdf", device = pdf, height= 4, width=8, dpi = 300, path = "../Output")
+ggsave("figx.png", device = png, height= 4, width=8, dpi = 300, path = "../Output")
+```
+
+# **Check Model fit for above models**
+
+```{r warning=FALSE, error = FALSE, message=FALSE}
+
+models <- list(
+  symsym = symsymlm,
+  asymsym = asymsymlm,
+  symasym = symasymlm,
+  asymasym = asymasymlm,
+  symtrans = symtranslm,
+  asymtrans = asymtranslm,
+  symconfl = symconfllm,
+  asymconfl = asymconfllm,
+  symtestcompare = symtestcompare,
+  asymtestcompare = asymtestcompare,
+  transfertestcompare = transfertestcompare
+)
+
+
+# Check for overdispersion
+for (model_name in names(models)) {
+  cat(paste0("Overdispersion Check for ", model_name, "\n"))
+  print(check_overdispersion(models[[model_name]]))
+  cat("\n")
+}
+
+# Compute performance metrics for each model
+performance_results <- lapply(models, model_performance)
+
+# Capture and print markdown output for each model
+for (model_name in names(performance_results)) {
+  cat(paste0("### Performance Metrics for ", model_name, "\n\n"))
+  
+  # Capture the output in markdown format
+  output <- capture.output(display(performance_results[[model_name]], format = "markdown", digits = 2, caption = NULL))
+  
+  # Print the captured output to the console
+  cat(paste(output, collapse = "\n"))
+  
+  cat("\n\n")
+}
+
+# Loop for simulating residuals
+for (model_name in names(models)) {
+  cat(paste0("Simulated Residuals and Plot for ", model_name, "\n"))
+  
+  # Simulate residuals
+  simulated_res <- simulateResiduals(fittedModel = models[[model_name]])
+  
+  # Plot simulated residuals
+  plot(simulated_res)
+  
+  cat("\n\n")
+}
+
+```
+
+# **Supplementary Training data**
+
+```{r}
+symtrlm <- glmer(CHOICE~ CNUM + (1|BEEID), family = binomial, data = STRAINING)
+summary(symtrlm)
+symtrlm2 <- glmer(CHOICE~ CNUM + (1|BEEID), family = binomial, data = STRAINING, nAGQ = 0) 
+summary(symtrlm2)
+STRAINING$CNUM2 <- scale(STRAINING$CNUM)
+symtrlm3 <- glmer(CHOICE~ CNUM2 + (1|BEEID), family = binomial, data = STRAINING) 
+summary(symtrlm3)
+
+# Extract AIC
+aic_models1 <- AIC(symtrlm2)
+aic_models2 <- AIC(symtrlm3)
+
+# Compare AIC values
+print(c(AIC_Model1 = aic_models1, AIC_Model2 = aic_models2))
+
+asymtrlm <- glmer(CHOICE~ CNUM + (1|BEEID), family = binomial, data = ATRAINING)
+summary(asymtrlm)
+asymtrlm2 <- glmer(CHOICE~ CNUM + (1|BEEID), family = binomial, data = ATRAINING, nAGQ = 0)
+summary(asymtrlm2)
+ATRAINING$CNUM2 <- scale(ATRAINING$CNUM)
+asymtrlm3 <- glmer(CHOICE~ CNUM2 + (1|BEEID), family = binomial, data = ATRAINING)
+summary(asymtrlm3)
+
+
+# Extract AIC
+aic_modela1 <- AIC(asymtrlm2)
+aic_modela2 <- AIC(asymtrlm3)
+
+# Compare AIC values
+print(c(AIC_Model1 = aic_modela1, AIC_Model2 = aic_modela2))
+```
+
+## *Bootstrapping to check models*
+
+```{r, eval=FALSE}
+
+# Bootstrap for model1
+bootstrap_model1 <- bootMer(symtrlm2, FUN = fixef, nsim = 1000)
+
+# Bootstrap for model2
+bootstrap_model2 <- bootMer(symtrlm3, FUN = fixef, nsim = 1000)
+
+# Compare bootstrap distributions
+print(c(Median_Coefficient_Model1 = median(bootstrap_model1$t), Median_Coefficient_Model2 = median(bootstrap_model2$t)))
+
+
+```
