@@ -259,7 +259,7 @@ asymdframe$condition <- factor(asymdframe$condition, levels = c('Symmetry', 'Asy
 
 symgraph <- ggplot(symdframe, aes(x = condition, y = proportion, fill = condition)) +
   geom_hline(yintercept = 0.5, linetype = "dashed", colour = "grey") +
-  labs(x = "Condition", y = "Mean proportion of choices", fill = "Condition") +
+  labs(x = "Test condition", y = "Mean proportion of choices", fill = "Condition") +
   geom_bar(stat = "identity", position = "dodge", width = .7) + 
   geom_point(data = symmeanpoints, aes(x = condition, y = prop, colour = BEEID), 
              position = position_jitter(width = 0.15, height = 0.01), size = 2, colour = "#696969") +
@@ -282,7 +282,7 @@ print(symgraph)
 
 asymgraph <- ggplot(asymdframe, aes(x = condition, y = proportion, fill = condition))+
   geom_hline(yintercept = 0.5, linetype = "dashed", colour = "grey") +
-  labs (x= "Condition", y = "Mean proportion of choices", fill="Condition") +
+  labs (x= "Test condition", y = "Mean proportion of choices", fill="Condition") +
   geom_bar(stat = "identity", position = "dodge", width = .7) + 
   geom_point(data = asymmeanpoints, aes(x = condition, y = prop), position = position_jitter(width=0.15, height=0.01), size =2, colour = "#696969") +
   scale_fill_manual(values = wes_palette("GrandBudapest2", n = 4)) +
